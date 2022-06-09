@@ -135,11 +135,11 @@ contract VVTICO is Ownable {
     uint256 totalReserved;
 
     address public bank;
-    uint256 unlockPeriod;
-    uint256 priceIncrease;//price updated every X days. PriceIcrease in %
-    uint256 roundDuration;
-    uint256 startTime;
-    uint256 icoDuration;
+    uint256 public unlockPeriod;
+    uint256 public priceIncrease;//price updated every X days. PriceIcrease in %
+    uint256 public roundDuration;
+    uint256 public startTime;
+    uint256 public icoDuration;
     bool active;
     address private priceFeed; 
     mapping(address => bool) public allowedToken; 
@@ -181,7 +181,7 @@ contract VVTICO is Ownable {
         bank = _bank; 
     }
     /*
-    We use SOY IDO price feed by default
+    We will use SOY IDO price feed by default
     */
     function setPriceFeed(address _feed) external onlyOwner{
         priceFeed = _feed; 
@@ -211,7 +211,7 @@ contract VVTICO is Ownable {
         priceIncrease = _coefficient;
     }
     /*
-    Calculates current VVT token price.
+    Calculates current VVT token price in USD(BUSDT).
     price updated "priceIncrease" percents every "roundDuration" time.
     */
     function getCurrentPrice() view internal returns(uint256){
@@ -223,7 +223,7 @@ contract VVTICO is Ownable {
     function getPriceInToken(address _token) view public returns(uint256){
         if(_token != address(0xbf6c50889d3a620eb42C0F188b65aDe90De958c4)){//BUSDT
             uint256 priceToken = IPriceFeed(priceFeed).getPrice(_token);
-            return getCurrentPrice() * priceToken;
+            return getCurrentPrice() / priceToken ;
         }
         else{
             return getCurrentPrice();
@@ -246,7 +246,7 @@ contract VVTICO is Ownable {
     function _reserve(address user, uint256 amount) internal{
         require(amount > 0 && amount <= availableForSale(),"Not enought tokens in ICO fund");
         reservedFund[numberOfUsers++] = ReserveInfo(user,amount,block.timestamp);
-        totalReserved+= amount;
+        totalReserved  += amount;
     }
     /* 
     Buy(reserve) tokens with base chain coin(CLO)
@@ -271,7 +271,7 @@ contract VVTICO is Ownable {
         require(allowedToken[_token],"Not allowed token");
         uint256 cost = getPriceInToken(_token) * amount;
         require(cost > 0, "Something wrong with price feed!");
-        IERC223(_token).transferFrom(msg.sender, address(bank),cost);//
+        IERC223(_token).transferFrom(msg.sender, address(bank),cost);
         _reserve(_msgSender(), amount);
     }
     /*
