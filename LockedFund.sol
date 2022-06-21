@@ -147,13 +147,14 @@ contract VVTFund is Ownable {
         require(block.timestamp >= (startTime+initialLockTime),"Initial lock period not finished");
         require(claimedBalance < initialBalance ,"locked funds ended");
         uint256 activeTime = block.timestamp - (startTime+initialLockTime);
-        uint256 currentRound = activeTime/ roundDuration;
+        uint256 currentRound = activeTime / roundDuration + 1;
         uint256 wantToClaim = initialBalance * (currentRound * releasePerRound ) / 1000; 
-        uint256 finalAmount = wantToClaim - (initialBalance  - claimedBalance);
-        claimedBalance += finalAmount;
+        uint256 finalAmount = wantToClaim - claimedBalance;
+        
         if( (claimedBalance + finalAmount) > initialBalance){//just to be sure there is no any cummulative calculation error and we can't claim last round
             finalAmount = initialBalance - claimedBalance;
         }
+        claimedBalance += finalAmount;
         IERC223(baseToken).transfer(owner(), finalAmount);
     }
     function rescueERC223(address _token, address to) external onlyOwner {

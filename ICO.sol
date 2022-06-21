@@ -215,7 +215,7 @@ contract VVTICO is Ownable {
     price updated "priceIncrease" percents every "roundDuration" time.
     */
     function getCurrentPrice() view internal returns(uint256){
-        return basePrice + ( (block.timestamp - startTime) / roundDuration) * priceIncrease / 100;//
+        return basePrice + basePrice  *  ( (block.timestamp - startTime) / roundDuration) * priceIncrease / 100;//
     }
     /*
     Returns current price in selected token or CLO
@@ -223,7 +223,7 @@ contract VVTICO is Ownable {
     function getPriceInToken(address _token) view public returns(uint256){
         if(_token != address(0xbf6c50889d3a620eb42C0F188b65aDe90De958c4)){//BUSDT
             uint256 priceToken = IPriceFeed(priceFeed).getPrice(_token);
-            return getCurrentPrice() / priceToken ;
+            return getCurrentPrice() * 10**18 / priceToken ;
         }
         else{
             return getCurrentPrice();
@@ -256,7 +256,7 @@ contract VVTICO is Ownable {
     function buyWithClo(uint256 amount) payable external{
         require(active,"IDO inactive");
         require(block.timestamp < (startTime + icoDuration),"ICO finished");
-        uint256 cost = getPriceInToken(address(1)) * amount;//address(1)=CLO in price feed
+        uint256 cost = getPriceInToken(address(1)) * amount / 10**18;//address(1)=CLO in price feed
         require(cost > 0, "Something wrong with price feed!");
         require(msg.value == cost,"Not enought funds");
         _reserve(_msgSender(), amount);
@@ -269,7 +269,7 @@ contract VVTICO is Ownable {
         require(active,"IDO inactive");
         require(block.timestamp < (startTime + icoDuration),"ICO finished");
         require(allowedToken[_token],"Not allowed token");
-        uint256 cost = getPriceInToken(_token) * amount;
+        uint256 cost = getPriceInToken(_token) * amount / 10**18;
         require(cost > 0, "Something wrong with price feed!");
         IERC223(_token).transferFrom(msg.sender, address(bank),cost);
         _reserve(_msgSender(), amount);
@@ -285,7 +285,7 @@ contract VVTICO is Ownable {
             if(reservedFund[i].amount > 0 && (reservedFund[i].buyTime+unlockPeriod) >= block.timestamp){
                 uint256 amount = reservedFund[i].amount;//re-entrancy protection
                 reservedFund[i].amount = 0;  
-                IERC223(baseToken).transferFrom(address(this), reservedFund[i].user,amount);
+                IERC223(baseToken).transfer(reservedFund[i].user,amount);
             }
         }     
     }
@@ -301,7 +301,7 @@ contract VVTICO is Ownable {
             if(reservedFund[i].amount > 0 && (reservedFund[i].buyTime+unlockPeriod) >= block.timestamp){
                 uint256 amount = reservedFund[i].amount;//re-entrancy protection
                 reservedFund[i].amount = 0;  
-                IERC223(baseToken).transferFrom(address(this), reservedFund[i].user,amount);  
+                IERC223(baseToken).transfer(reservedFund[i].user,amount);  
             }
         }
     }
